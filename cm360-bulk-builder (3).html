@@ -177,6 +177,24 @@
   .b-cell.after.changed{color:var(--green);background:var(--green-050);padding:2px 6px;border-radius:5px;display:inline-block}
   .b-cell.after.same{color:var(--faint)}
   tr.b-willchange td{background:var(--green-050)}
+  .tok{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-bottom:6px;background:#fff;font-size:13px}
+  .tok .badge{font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:20px;white-space:nowrap}
+  .tok .badge.var{background:var(--sky-050);color:#0E6E8C}
+  .tok .badge.con{background:var(--surface-2);color:var(--muted)}
+  .tok .grow{flex:1;min-width:0}
+  .tok .ord{display:flex;gap:3px}
+  .tok button.mini,.tok .add,.tok .rm{border:1px solid var(--line-strong);background:#fff;border-radius:5px;cursor:pointer;font-size:12px;line-height:1;padding:4px 8px;color:var(--muted)}
+  .tok button.mini:disabled{opacity:.35;cursor:not-allowed}
+  .tok .add{color:var(--accent-700);border-color:var(--accent)}
+  .tok .rm:hover{color:var(--red);border-color:var(--red)}
+  .name-preview{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:8px;padding:10px 12px;word-break:break-all;color:var(--ink)}
+  .name-preview .ph{color:var(--accent-700)}
+  .namingfields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  @media(max-width:560px){.namingfields{grid-template-columns:1fr}}
+  .preset-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px}
+  .preset-bar select{flex:1}
+  .preset-bar .lk{font-size:11px;color:var(--accent-700);cursor:pointer;white-space:nowrap;background:transparent;border:0}
+  .preset-bar .lk:hover{text-decoration:underline}
   .hidden{display:none!important}
 </style>
 </head>
@@ -186,6 +204,7 @@
   <div class="divider"></div>
   <div class="title">CM360 Bulk Builder<small>Trafficking automation</small></div>
   <nav class="tabs">
+    <button id="tab-naming" onclick="switchTab('naming')">Naming</button>
     <button id="tab-tracker" class="active" onclick="switchTab('tracker')">Tracker</button>
     <button id="tab-tag" onclick="switchTab('tag')">Tag</button>
     <button id="tab-bulk" onclick="switchTab('bulk')">Bulk edit</button>
@@ -195,11 +214,96 @@
 </header>
 
 <main>
+  <!-- ===================== NAMING ===================== -->
+  <div id="view-naming" class="hidden">
+    <div class="grid">
+      <div class="panel sticky">
+        <div class="panel-h"><span class="step">★</span><h2>Conventions</h2></div>
+        <div class="panel-b">
+          <div class="field">
+            <label class="lbl">Preset</label>
+            <select id="n-preset" onchange="n_selectPreset(this.value)"></select>
+          </div>
+          <div class="field">
+            <label class="lbl">Preset name</label>
+            <input type="text" id="n-name" oninput="n_rename(this.value)">
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+            <button class="btn sm" onclick="n_newPreset()">New</button>
+            <button class="btn sm" onclick="n_dupPreset()">Duplicate</button>
+            <button class="btn ghost sm" onclick="n_delPreset()">Delete</button>
+          </div>
+          <div class="field">
+            <label class="lbl">Delimiter</label>
+            <select id="n-delim" onchange="n_setDelim(this.value)">
+              <option value=" - ">space hyphen space ( - )</option>
+              <option value="_">underscore ( _ )</option>
+              <option value="-">hyphen ( - )</option>
+              <option value=" | ">pipe ( | )</option>
+              <option value=".">dot ( . )</option>
+              <option value=" ">space (   )</option>
+            </select>
+          </div>
+          <div class="help">Presets are shared across the Tracker and Tag tabs; each tab picks which one it uses. Saved in this browser once the tool is hosted. Use Export for a portable copy.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn ghost sm" onclick="n_exportJson()">Export presets</button>
+            <label class="btn ghost sm" style="cursor:pointer">Import<input type="file" accept=".json" onchange="n_importJson(event)" style="display:none"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="panel">
+          <div class="panel-h"><span class="step">1</span><h2>Build the name</h2></div>
+          <div class="panel-b">
+            <label class="lbl">Convention order <span style="font-weight:400;color:var(--faint)">(top to bottom = left to right)</span></label>
+            <div id="n-order"></div>
+            <div class="help" style="margin-top:8px"><span class="badge var" style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--sky-050);color:#0E6E8C">variant</span> tokens multiply your placements (you select several). <span class="badge con" style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--surface-2);color:var(--muted)">constant</span> tokens are typed once per batch.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><span class="step">2</span><h2>Add tokens</h2></div>
+          <div class="panel-b">
+            <div class="ms" style="margin-bottom:12px">
+              <div class="ms-search">
+                <input type="text" id="n-tok-search" placeholder="Search tokens (campaign, dimension, bid type…)" oninput="n_renderCatalog()">
+              </div>
+              <div class="ms-list" id="n-catalog" style="max-height:230px"></div>
+            </div>
+            <label class="lbl">Add a custom token</label>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="n-custom" placeholder="e.g. Bid Strategy" onkeydown="if(event.key==='Enter'){n_addCustom();event.preventDefault()}">
+              <button class="btn sm" onclick="n_addCustom()">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><span class="step">3</span><h2>Preview</h2></div>
+          <div class="panel-b">
+            <label class="lbl">As a Tracker placement</label>
+            <div class="name-preview" id="n-prev-tracker" style="margin-bottom:12px"></div>
+            <label class="lbl">As a Tag placement</label>
+            <div class="name-preview" id="n-prev-tag"></div>
+            <div class="help" style="margin-top:8px">Blue <span class="ph">{tokens}</span> are constants you fill in on the tab. Tokens that don't apply to a tab are dropped from that tab's name automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="view-tracker">
     <div class="grid">
       <div class="panel sticky">
         <div class="panel-h"><span class="step">1</span><h2>Campaign setup</h2></div>
         <div class="panel-b">
+          <div class="preset-bar">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap">Naming</span>
+            <select id="track-preset" onchange="track_setPreset(this.value)"></select>
+            <button class="lk" onclick="switchTab('naming')">edit</button>
+          </div>
+          <div id="track-namingfields" class="namingfields" style="margin-bottom:14px"></div>
           <div class="field">
             <label class="lbl">Client <span class="req">*</span></label>
             <div class="combo">
@@ -365,6 +469,12 @@
       <div class="panel sticky">
         <div class="panel-h"><span class="step">1</span><h2>Tag setup</h2></div>
         <div class="panel-b">
+          <div class="preset-bar">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap">Naming</span>
+            <select id="tag-preset" onchange="tag_setPreset(this.value)"></select>
+            <button class="lk" onclick="switchTab('naming')">edit</button>
+          </div>
+          <div id="tag-namingfields" class="namingfields" style="margin-bottom:14px"></div>
           <div class="field">
             <label class="lbl">Campaign name <span class="req">*</span></label>
             <input type="text" id="t-campaign" placeholder="KIA 2026 April" oninput="t_reparse();t_rebuildMatrix()">
@@ -653,6 +763,41 @@ var tagState = { selPlatforms:new Set(), creatives:[], matrix:{}, rows:[], seq:1
 var bulkState = { headers:[], rows:[], orig:[], fileName:"", sheetName:"Campaign spreadsheet",
   urlCol:0, siteCol:-1, placeCol:-1, adCol:-1 };
 
+/* ---------- Naming convention model ---------- */
+const NAME_TOKENS = [
+  {key:"platform", label:"Platform"},
+  {key:"client", label:"Client"},
+  {key:"campaign", label:"Campaign name"},
+  {key:"product", label:"Product"},
+  {key:"target", label:"Format / Target"},
+  {key:"language", label:"Language"},
+  {key:"dimension", label:"Dimension"},
+  {key:"medium", label:"Medium / file type"},
+  {key:"bidtype", label:"Bid type"},
+  {key:"objective", label:"Objective"},
+  {key:"commtype", label:"Communication type"},
+  {key:"audience", label:"Audience"},
+  {key:"channel", label:"Channel"}
+];
+const VARIANT_KEYS = new Set(["platform","language","target","dimension","product"]);
+const NATIVE = {
+  tracker:["platform","client","campaign","target","language","dimension"],
+  tag:["platform","campaign","medium","language","product","dimension"]
+};
+const DEFAULT_PRESETS = [
+  {id:"tracker-default", name:"Tracker (default)", delim:" - ",
+   tokens:[{key:"platform"},{key:"client"},{key:"campaign"},{key:"target"},{key:"language"},{key:"dimension"}]},
+  {id:"tag-default", name:"Tag (default)", delim:" - ",
+   tokens:[{key:"platform"},{key:"campaign"},{key:"medium"},{key:"language"},{key:"product"},{key:"dimension"}]}
+];
+var namingState = {
+  presets: JSON.parse(JSON.stringify(DEFAULT_PRESETS)),
+  editingId:"tracker-default",
+  activeTracker:"tracker-default",
+  activeTag:"tag-default",
+  consts:{tracker:{}, tag:{}}
+};
+
 const escRe = s => (s||"").toString().replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 
 const $ = id => document.getElementById(id);
@@ -668,10 +813,12 @@ function siteNameFor(p){return (p&&(state.sessionSiteNames[p.name]||p.siteName))
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2400);}
 
 function init(){
+  n_loadStored();
   $("f-start").value=todayISO();
   renderClientOpts();renderPlatforms();renderPlatChips();renderLangs();renderTgts();renderDims();renderDimChips();
   updateEquation();rebuildMatrix();updateActionMsg();
   t_renderPlatforms();t_renderPlatChips();t_rebuildMatrix();t_refresh();
+  n_renderAll();
   document.addEventListener("click",e=>{if(!e.target.closest(".combo"))closeClient();});
 }
 
@@ -768,8 +915,9 @@ function buildUrl(platform,target,lang){
 
 function generate(){
   const client=state.client,campaign=($("f-campaign").value||"").trim();
-  if(!client){toast("Choose or create a client.");return;}
-  if(!campaign){toast("Campaign name is required.");return;}
+  const trackKeys=presetById(namingState.activeTracker).tokens.map(t=>t.key);
+  if(trackKeys.indexOf("client")>=0 && !client){toast("Choose or create a client.");return;}
+  if(trackKeys.indexOf("campaign")>=0 && !campaign){toast("Campaign name is required.");return;}
   if(!state.selPlatforms.size||!state.selLanguages.size||!state.selTargets.size){toast("Pick at least one platform, language and target.");return;}
   const multi=$("f-multidim").checked, dims=multi?[...state.selDims]:["1x1"];
   if(multi&&!dims.length){toast("Pick at least one dimension, or turn off the per-dimension option.");return;}
@@ -778,8 +926,8 @@ function generate(){
   for(const pName of state.selPlatforms){
     const p=platByName(pName)||{name:pName,siteId:"",siteName:""};
     for(const tgt of state.selTargets){for(const lang of state.selLanguages){for(const dim of dims){
-      const baseName=`${pName} - ${client} - ${campaign} - ${tgt} - ${lang}`;
-      const name=multi?`${baseName} - ${dim}`:baseName;
+      const dimName = multi ? dim : "";
+      const name = buildName("tracker",{platform:pName,client,campaign,target:tgt,language:lang,dimension:dimName});
       const key=`${pName}|${tgt}|${lang}|${dim}|${campaign}`;
       if(existing.has(key)){skipped++;continue;}
       existing.add(key);
@@ -895,12 +1043,16 @@ function resetAll(){
 
 function switchTab(t){
   currentTab=t;
+  $("view-naming").classList.toggle("hidden",t!=="naming");
   $("view-tracker").classList.toggle("hidden",t!=="tracker");
   $("view-tag").classList.toggle("hidden",t!=="tag");
   $("view-bulk").classList.toggle("hidden",t!=="bulk");
+  $("tab-naming").classList.toggle("active",t==="naming");
   $("tab-tracker").classList.toggle("active",t==="tracker");
   $("tab-tag").classList.toggle("active",t==="tag");
   $("tab-bulk").classList.toggle("active",t==="bulk");
+  $("actionbar").classList.toggle("hidden",t==="naming");
+  if(t==="naming") n_renderAll();
   refreshActionBar();
 }
 function exportCurrent(){ currentTab==="tag" ? t_exportXlsx() : currentTab==="bulk" ? b_export() : exportXlsx(); }
@@ -1039,7 +1191,8 @@ function t_refresh(){
 function t_generate(){
   const campaign=($("t-campaign").value||"").trim();
   const medium=($("t-medium").value||"").trim();
-  if(!campaign){toast("Campaign name is required.");return;}
+  const tagKeys=presetById(namingState.activeTag).tokens.map(t=>t.key);
+  if(tagKeys.indexOf("campaign")>=0 && !campaign){toast("Campaign name is required.");return;}
   if(!tagState.selPlatforms.size){toast("Pick at least one platform.");return;}
   const cre=t_included();
   if(!cre.length){toast("Parse and include at least one creative.");return;}
@@ -1050,7 +1203,7 @@ function t_generate(){
     for(const c of cre){
       const key=`${pName}|${c.id}|${campaign}|${medium}`;
       if(existing.has(key)){skipped++;continue;} existing.add(key);
-      const placement=`${pName} - ${campaign} - ${medium} - ${c.lang} - ${c.product} - ${c.dim}`;
+      const placement=buildName("tag",{platform:pName,campaign,medium,language:c.lang,product:c.product,dimension:c.dim});
       tagState.rows.push({id:tagState.seq++,key,platform:pName,siteId:p.siteId,
         dim:c.dim,product:c.product,lang:c.lang,creativeId:c.id,creativeName:c.name,
         placement,url:t_buildUrl(pName,c.product,c.lang)});
@@ -1354,6 +1507,148 @@ function b_loadSample(){
   b_setData(headers, rows, "Sample CM360 export.xlsx", "Campaign spreadsheet");
   toast("Sample loaded. Try Find “old-domain.com” → Replace “www.kia.com”.");
 }
+
+/* ===================== NAMING TAB ===================== */
+function tokenLabel(key){ if(key.indexOf("custom:")===0) return key.slice(7); const t=NAME_TOKENS.find(x=>x.key===key); return t?t.label:key; }
+function isVariant(key){ return VARIANT_KEYS.has(key); }
+function presetById(id){ return namingState.presets.find(p=>p.id===id) || namingState.presets[0]; }
+function editingPreset(){ return presetById(namingState.editingId); }
+
+function n_persist(){ try{ localStorage.setItem("cm360_naming", JSON.stringify({presets:namingState.presets,activeTracker:namingState.activeTracker,activeTag:namingState.activeTag})); }catch(e){} }
+function n_loadStored(){ try{ const r=localStorage.getItem("cm360_naming"); if(!r) return;
+  const d=JSON.parse(r);
+  if(d&&Array.isArray(d.presets)&&d.presets.length){
+    namingState.presets=d.presets;
+    const ids=d.presets.map(p=>p.id);
+    namingState.activeTracker=ids.includes(d.activeTracker)?d.activeTracker:ids[0];
+    namingState.activeTag=ids.includes(d.activeTag)?d.activeTag:ids[0];
+    namingState.editingId=ids[0];
+  }
+}catch(e){} }
+
+function n_renderAll(){ n_renderPresetSelect(); n_renderOrder(); n_renderCatalog(); n_renderDelim(); n_renderPreview();
+  $("n-name").value=editingPreset().name;
+  track_renderPresetSelect(); tag_renderPresetSelect(); track_renderNamingFields(); tag_renderNamingFields(); }
+
+function n_renderPresetSelect(){
+  $("n-preset").innerHTML=namingState.presets.map(p=>`<option value="${esc(p.id)}" ${p.id===namingState.editingId?'selected':''}>${esc(p.name)}</option>`).join("");
+}
+function n_renderDelim(){ const sel=$("n-delim"); const d=editingPreset().delim;
+  if(![...sel.options].some(o=>o.value===d)){const o=document.createElement("option");o.value=d;o.textContent="custom ("+d+")";sel.appendChild(o);}
+  sel.value=d; }
+function n_selectPreset(id){ namingState.editingId=id; n_renderAll(); }
+function n_rename(v){ editingPreset().name=v; n_renderPresetSelect(); track_renderPresetSelect(); tag_renderPresetSelect(); n_persist(); }
+function n_setDelim(v){ editingPreset().delim=v; n_renderPreview(); n_persist(); }
+function n_newPreset(){ const id="p"+Date.now(); namingState.presets.push({id,name:"New convention",delim:" - ",tokens:[{key:"platform"},{key:"campaign"}]}); namingState.editingId=id; n_renderAll(); n_persist(); }
+function n_dupPreset(){ const e=editingPreset(); const id="p"+Date.now(); namingState.presets.push({id,name:e.name+" copy",delim:e.delim,tokens:JSON.parse(JSON.stringify(e.tokens))}); namingState.editingId=id; n_renderAll(); n_persist(); }
+function n_delPreset(){ if(namingState.presets.length<=1){toast("Keep at least one preset.");return;}
+  const id=namingState.editingId; namingState.presets=namingState.presets.filter(p=>p.id!==id);
+  if(namingState.activeTracker===id) namingState.activeTracker=namingState.presets[0].id;
+  if(namingState.activeTag===id) namingState.activeTag=namingState.presets[0].id;
+  namingState.editingId=namingState.presets[0].id; n_renderAll(); n_persist(); }
+
+function n_renderOrder(){
+  const p=editingPreset();
+  if(!p.tokens.length){$("n-order").innerHTML='<div class="help">No tokens yet. Add some below.</div>';return;}
+  $("n-order").innerHTML=p.tokens.map((t,i)=>{
+    const v=isVariant(t.key);
+    return `<div class="tok">
+      <span class="grow">${esc(tokenLabel(t.key))}</span>
+      <span class="badge ${v?'var':'con'}">${v?'variant':'constant'}</span>
+      <span class="ord">
+        <button class="mini" onclick="n_move(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="mini" onclick="n_move(${i},1)" ${i===p.tokens.length-1?'disabled':''}>↓</button>
+        <button class="rm" onclick="n_removeTok(${i})">×</button>
+      </span></div>`;
+  }).join("");
+}
+function n_move(i,d){ const p=editingPreset(); const j=i+d; if(j<0||j>=p.tokens.length)return;
+  const tmp=p.tokens[i];p.tokens[i]=p.tokens[j];p.tokens[j]=tmp; n_renderOrder(); n_renderPreview(); n_persist(); }
+function n_removeTok(i){ editingPreset().tokens.splice(i,1); n_renderOrder(); n_renderCatalog(); n_renderPreview(); track_renderNamingFields(); tag_renderNamingFields(); n_persist(); }
+function n_addTok(key){ const p=editingPreset(); if(p.tokens.some(t=>t.key===key)){toast("Already in the convention.");return;}
+  p.tokens.push({key}); n_renderOrder(); n_renderCatalog(); n_renderPreview(); track_renderNamingFields(); tag_renderNamingFields(); n_persist(); }
+function n_addCustom(){ const v=($("n-custom").value||"").trim(); if(!v)return;
+  n_addTok("custom:"+v); $("n-custom").value=""; }
+function n_renderCatalog(){
+  const q=($("n-tok-search").value||"").toLowerCase();
+  const used=new Set(editingPreset().tokens.map(t=>t.key));
+  const list=NAME_TOKENS.filter(t=>!used.has(t.key)&&(t.label.toLowerCase().includes(q)||t.key.includes(q)));
+  $("n-catalog").innerHTML=list.map(t=>{
+    const v=isVariant(t.key);
+    return `<div class="tok" style="margin:6px"><span class="grow">${esc(t.label)}</span>
+      <span class="badge ${v?'var':'con'}">${v?'variant':'constant'}</span>
+      <button class="add" onclick="n_addTok('${esc(t.key)}')">+ add</button></div>`;
+  }).join("") || `<div style="padding:14px;color:var(--faint);font-size:12px">No tokens match. Add a custom one below.</div>`;
+}
+function n_previewName(tab,p){
+  const sample = tab==="tracker"
+    ? {platform:"DV360",client:"KIA AlJabr",campaign:"KIA 2026 April",target:"Tactical - Seltos",language:"AR",dimension:"300x250"}
+    : {platform:"DV360",campaign:"KIA 2026 April",medium:"JPG",language:"AR",product:"Tactical - Seltos",dimension:"300x250"};
+  const parts=p.tokens.map(t=>{
+    if(Object.prototype.hasOwnProperty.call(sample,t.key)) return esc(sample[t.key]);
+    return `<span class="ph">{${esc(tokenLabel(t.key))}}</span>`;
+  }).filter(Boolean);
+  return parts.join(esc(p.delim)) || '<span style="color:var(--faint)">(empty)</span>';
+}
+function n_renderPreview(){ const p=editingPreset();
+  $("n-prev-tracker").innerHTML=n_previewName("tracker",p);
+  $("n-prev-tag").innerHTML=n_previewName("tag",p); }
+
+function n_exportJson(){
+  const blob=new Blob([JSON.stringify({presets:namingState.presets},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="cm360-naming-presets.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function n_importJson(e){ const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result);
+    const arr=Array.isArray(d)?d:d.presets; if(!Array.isArray(arr)||!arr.length){toast("No presets in that file.");return;}
+    arr.forEach(p=>{ if(p&&p.id&&p.tokens){ const i=namingState.presets.findIndex(x=>x.id===p.id);
+      if(i>=0) namingState.presets[i]=p; else namingState.presets.push(p); } });
+    namingState.editingId=arr[0].id; n_renderAll(); n_persist(); toast(`Imported ${arr.length} preset${arr.length!==1?'s':''}.`);
+  }catch(err){toast("Could not read that file.");} };
+  r.readAsText(f); e.target.value="";
+}
+
+/* ---------- name builder used by Tracker & Tag ---------- */
+function constVal(tab,key){ return (namingState.consts[tab] && namingState.consts[tab][key]) || ""; }
+function resolveToken(tab,key,ctx){
+  if(ctx && Object.prototype.hasOwnProperty.call(ctx,key)) return ctx[key]==null?"":String(ctx[key]);
+  return constVal(tab,key);
+}
+function buildName(tab,ctx){
+  const preset = tab==="tracker" ? presetById(namingState.activeTracker) : presetById(namingState.activeTag);
+  const parts = preset.tokens.map(t=>resolveToken(tab,t.key,ctx).trim()).filter(Boolean);
+  return parts.join(preset.delim);
+}
+
+/* ---------- per-tab preset selectors + constant fields ---------- */
+function track_renderPresetSelect(){ const s=$("track-preset"); if(!s)return;
+  s.innerHTML=namingState.presets.map(p=>`<option value="${esc(p.id)}" ${p.id===namingState.activeTracker?'selected':''}>${esc(p.name)}</option>`).join(""); }
+function tag_renderPresetSelect(){ const s=$("tag-preset"); if(!s)return;
+  s.innerHTML=namingState.presets.map(p=>`<option value="${esc(p.id)}" ${p.id===namingState.activeTag?'selected':''}>${esc(p.name)}</option>`).join(""); }
+function track_setPreset(id){ namingState.activeTracker=id; track_renderNamingFields(); n_persist(); }
+function tag_setPreset(id){ namingState.activeTag=id; tag_renderNamingFields(); n_persist(); }
+
+function namingFieldsFor(tab){
+  const preset = tab==="tracker" ? presetById(namingState.activeTracker) : presetById(namingState.activeTag);
+  return preset.tokens.filter(t=>NATIVE[tab].indexOf(t.key)<0); // constants this tab must collect
+}
+function renderNamingFields(tab, containerId){
+  const el=$(containerId); if(!el) return;
+  const fields=namingFieldsFor(tab);
+  if(!fields.length){el.innerHTML="";el.style.display="none";return;}
+  el.style.display="grid";
+  el.innerHTML=fields.map(t=>{
+    const key=t.key, val=constVal(tab,key);
+    return `<div class="field" style="margin-bottom:0">
+      <label class="lbl">${esc(tokenLabel(key))}</label>
+      <input type="text" value="${esc(val)}" placeholder="${esc(tokenLabel(key))}"
+        oninput="namingState.consts['${tab}']['${esc(key)}']=this.value">
+    </div>`;
+  }).join("");
+}
+function track_renderNamingFields(){ renderNamingFields("tracker","track-namingfields"); }
+function tag_renderNamingFields(){ renderNamingFields("tag","tag-namingfields"); }
 
 init();
 </script>
