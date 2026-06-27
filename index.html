@@ -195,6 +195,18 @@
   .preset-bar select{flex:1}
   .preset-bar .lk{font-size:11px;color:var(--accent-700);cursor:pointer;white-space:nowrap;background:transparent;border:0}
   .preset-bar .lk:hover{text-decoration:underline}
+  table.cre2{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.cre2 thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-weight:600;color:var(--muted);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}
+  table.cre2 td{padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.cre2 tr.bad td{background:var(--red-050)}
+  table.cre2 input{width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:5px}
+  table.cre2 input.mini{font-family:var(--mono)}
+  table.cre2 tr.grp td{background:var(--blue-050);font-weight:600;color:var(--accent-700);font-size:11.5px}
+  table.cre2 tr.grp input{max-width:140px;display:inline-block;margin-left:6px}
+  td.newname{font-family:var(--mono);font-size:11px;color:var(--ink);word-break:break-all}
+  .twocol{display:grid;grid-template-columns:60px 60px;gap:4px}
+  .twocol input{width:100%}
+  .pill2{display:inline-block;font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:20px;background:var(--yellow-050);color:var(--amber);border:1px solid #EAD3A8}
   .hidden{display:none!important}
 </style>
 </head>
@@ -207,6 +219,7 @@
     <button id="tab-naming" onclick="switchTab('naming')">Naming</button>
     <button id="tab-tracker" class="active" onclick="switchTab('tracker')">Tracker</button>
     <button id="tab-tag" onclick="switchTab('tag')">Tag</button>
+    <button id="tab-creatives" onclick="switchTab('creatives')">Creatives</button>
     <button id="tab-bulk" onclick="switchTab('bulk')">Bulk edit</button>
   </nav>
   <div class="spacer"></div>
@@ -576,6 +589,71 @@
       </div>
     </div>
   </div>
+  <!-- ===================== CREATIVES ===================== -->
+  <div id="view-creatives" class="hidden">
+    <div class="grid">
+      <div class="panel sticky">
+        <div class="panel-h"><span class="step">1</span><h2>Creative setup</h2></div>
+        <div class="panel-b">
+          <div class="preset-bar">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap">Naming</span>
+            <select id="cre-preset" onchange="cre_setPreset(this.value)"></select>
+            <button class="lk" onclick="switchTab('naming')">edit</button>
+          </div>
+          <div id="cre-namingfields" class="namingfields" style="margin-bottom:14px"></div>
+          <div class="field">
+            <label class="lbl">Campaign name</label>
+            <input type="text" id="cre-campaign" placeholder="KIA 2026 April" oninput="cre_render()">
+          </div>
+          <div class="field">
+            <label class="lbl">Select the creatives folder</label>
+            <button class="btn primary" style="width:100%" onclick="cre_pickFolder()">Choose folder…</button>
+            <input type="file" id="cre-fallback-input" webkitdirectory directory multiple style="display:none" onchange="cre_fallbackLoad(event)">
+            <div class="help" id="cre-support"></div>
+          </div>
+          <div id="cre-fileinfo" class="hidden" style="padding:11px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font-size:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn ghost sm" onclick="cre_clear()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div id="cre-empty" class="panel"><div class="stub">
+          <h2>Creatives · rename before trafficking</h2>
+          <p>Vendors rarely name creatives the way you need. Point the tool at the folder you received, and it reads the whole tree: product and language come from the folder names (like <b>K3</b> then <b>Arabic</b>), and the real size is read from the file itself, so a wrong or doubled size in the filename does not matter.</p>
+          <ul>
+            <li><b>Real dimensions</b> are detected from each image or video. A 2x asset (for example a 160x600 delivered at 320x1200) is recognised, so the name gets the nominal size while the actual size is kept for CM360.</li>
+            <li><b>Product and language</b> are pulled from the folders, editable per file or per folder.</li>
+            <li><b>Rename in place</b> on Chrome or Edge, or export an old to new map for your existing rename script on any browser.</li>
+          </ul>
+          <p>After renaming, upload to CM360 and export with IDs as usual, then the Tag tab takes over.</p>
+        </div></div>
+
+        <div id="cre-work" class="hidden">
+          <div class="results-head">
+            <h2>Creatives</h2>
+            <span class="count" id="cre-count"></span>
+            <div class="vsum" id="cre-vsum"></div>
+          </div>
+          <div class="tablewrap"><div class="tscroll">
+            <table class="cre2">
+              <thead><tr>
+                <th style="width:1%"></th><th>Original</th><th>Actual</th><th>Nominal</th>
+                <th>Product</th><th>Lang</th><th>New name</th><th style="width:1%"></th>
+              </tr></thead>
+              <tbody id="cre-body"></tbody>
+            </table>
+          </div></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn primary" id="cre-rename" onclick="cre_rename()">Rename in folder</button>
+            <button class="btn" onclick="cre_exportMap()">Export rename map (.xlsx)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== BULK EDIT ===================== -->
   <div id="view-bulk" class="hidden">
     <div class="grid">
@@ -782,20 +860,24 @@ const NAME_TOKENS = [
 const VARIANT_KEYS = new Set(["platform","language","target","dimension","product"]);
 const NATIVE = {
   tracker:["platform","client","campaign","target","language","dimension"],
-  tag:["platform","campaign","medium","language","product","dimension"]
+  tag:["platform","campaign","medium","language","product","dimension"],
+  creative:["dimension","product","campaign","language"]
 };
 const DEFAULT_PRESETS = [
   {id:"tracker-default", name:"Tracker (default)", delim:" - ",
    tokens:[{key:"platform"},{key:"client"},{key:"campaign"},{key:"target"},{key:"language"},{key:"dimension"}]},
   {id:"tag-default", name:"Tag (default)", delim:" - ",
-   tokens:[{key:"platform"},{key:"campaign"},{key:"medium"},{key:"language"},{key:"product"},{key:"dimension"}]}
+   tokens:[{key:"platform"},{key:"campaign"},{key:"medium"},{key:"language"},{key:"product"},{key:"dimension"}]},
+  {id:"creative-default", name:"Creative (default)", delim:" - ",
+   tokens:[{key:"dimension"},{key:"product"},{key:"campaign"},{key:"language"}]}
 ];
 var namingState = {
   presets: JSON.parse(JSON.stringify(DEFAULT_PRESETS)),
   editingId:"tracker-default",
   activeTracker:"tracker-default",
   activeTag:"tag-default",
-  consts:{tracker:{}, tag:{}}
+  activeCreative:"creative-default",
+  consts:{tracker:{}, tag:{}, creative:{}}
 };
 
 const escRe = s => (s||"").toString().replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
@@ -819,6 +901,7 @@ function init(){
   updateEquation();rebuildMatrix();updateActionMsg();
   t_renderPlatforms();t_renderPlatChips();t_rebuildMatrix();t_refresh();
   n_renderAll();
+  cre_initSupport();
   document.addEventListener("click",e=>{if(!e.target.closest(".combo"))closeClient();});
 }
 
@@ -1046,12 +1129,14 @@ function switchTab(t){
   $("view-naming").classList.toggle("hidden",t!=="naming");
   $("view-tracker").classList.toggle("hidden",t!=="tracker");
   $("view-tag").classList.toggle("hidden",t!=="tag");
+  $("view-creatives").classList.toggle("hidden",t!=="creatives");
   $("view-bulk").classList.toggle("hidden",t!=="bulk");
   $("tab-naming").classList.toggle("active",t==="naming");
   $("tab-tracker").classList.toggle("active",t==="tracker");
   $("tab-tag").classList.toggle("active",t==="tag");
+  $("tab-creatives").classList.toggle("active",t==="creatives");
   $("tab-bulk").classList.toggle("active",t==="bulk");
-  $("actionbar").classList.toggle("hidden",t==="naming");
+  $("actionbar").classList.toggle("hidden",t==="naming"||t==="creatives");
   if(t==="naming") n_renderAll();
   refreshActionBar();
 }
@@ -1088,8 +1173,10 @@ function t_parseLine(line){
   }
   let id=parts.find(p=>/^\d{4,}$/.test(p))||"";
   let name=(parts.filter(p=>p!==id).sort((a,b)=>b.length-a.length)[0]||"").replace(/^["']|["']$/g,"").trim();
+  let actual="";
+  for(const p of parts){ const t=p.trim(); if(t!==name && /^\d{2,5}\s*[x×]\s*\d{2,5}$/i.test(t)){ actual=t.replace(/\s+/g,"").replace("×","x"); break; } }
   if(!id&&!name) return null;
-  return {id,name};
+  return {id,name,actual};
 }
 function t_deriveParts(name){
   const camp=($("t-campaign").value||"").trim();
@@ -1116,7 +1203,7 @@ function t_parse(){
     if(seen.has(k)){skipped++;return;} seen.add(k);
     const d=t_deriveParts(parsed.name);
     tagState.creatives.push({uid:tagState.seq++,id:parsed.id,name:parsed.name,
-      dim:d.dim,lang:d.lang,product:d.product,include:true,dimL:false,langL:false,prodL:false});
+      dim:d.dim,actualDim:parsed.actual||"",lang:d.lang,product:d.product,include:true,dimL:false,langL:false,prodL:false,actL:false});
     added++;
   });
   $("t-cre-wrap").classList.remove("hidden");
@@ -1140,6 +1227,7 @@ function t_renderCreatives(){
       <td style="width:1%"><input type="checkbox" ${c.include?'checked':''} onchange="t_editCre(${c.uid},'include',this.checked)"></td>
       <td class="idc"><input value="${esc(c.id)}" oninput="t_editCre(${c.uid},'id',this.value)"></td>
       <td style="width:96px"><input value="${esc(c.dim)}" placeholder="300x250" oninput="t_editCre(${c.uid},'dim',this.value)"></td>
+      <td style="width:96px"><input class="mini" value="${esc(c.actualDim)}" placeholder="${esc(c.dim||'actual')}" oninput="t_editCre(${c.uid},'actualDim',this.value)"></td>
       <td style="width:70px"><input value="${esc(c.lang)}" placeholder="AR" oninput="t_editCre(${c.uid},'lang',this.value)"></td>
       <td><input value="${esc(c.product)}" placeholder="Product" oninput="t_editCre(${c.uid},'product',this.value)"></td>
       <td style="color:var(--faint);font-family:var(--mono);font-size:11px">${esc(c.name)}</td>
@@ -1150,7 +1238,7 @@ function t_renderCreatives(){
 function t_editCre(uid,field,val){
   const c=tagState.creatives.find(x=>x.uid===uid); if(!c) return;
   if(field==="include"){c.include=val;}
-  else{c[field]=val; if(field==="dim")c.dimL=true; if(field==="lang")c.langL=true; if(field==="product")c.prodL=true;}
+  else{c[field]=val; if(field==="dim")c.dimL=true; if(field==="lang")c.langL=true; if(field==="product")c.prodL=true; if(field==="actualDim")c.actL=true;}
   const tr=$("t-cre-body").querySelector(`tr[data-uid="${uid}"]`);
   if(tr){const bad=!c.id||!c.dim||!c.product||!c.lang;tr.classList.toggle("bad",bad&&c.include);}
   t_rebuildMatrix();t_refresh();
@@ -1514,7 +1602,7 @@ function isVariant(key){ return VARIANT_KEYS.has(key); }
 function presetById(id){ return namingState.presets.find(p=>p.id===id) || namingState.presets[0]; }
 function editingPreset(){ return presetById(namingState.editingId); }
 
-function n_persist(){ try{ localStorage.setItem("cm360_naming", JSON.stringify({presets:namingState.presets,activeTracker:namingState.activeTracker,activeTag:namingState.activeTag})); }catch(e){} }
+function n_persist(){ try{ localStorage.setItem("cm360_naming", JSON.stringify({presets:namingState.presets,activeTracker:namingState.activeTracker,activeTag:namingState.activeTag,activeCreative:namingState.activeCreative})); }catch(e){} }
 function n_loadStored(){ try{ const r=localStorage.getItem("cm360_naming"); if(!r) return;
   const d=JSON.parse(r);
   if(d&&Array.isArray(d.presets)&&d.presets.length){
@@ -1522,13 +1610,15 @@ function n_loadStored(){ try{ const r=localStorage.getItem("cm360_naming"); if(!
     const ids=d.presets.map(p=>p.id);
     namingState.activeTracker=ids.includes(d.activeTracker)?d.activeTracker:ids[0];
     namingState.activeTag=ids.includes(d.activeTag)?d.activeTag:ids[0];
+    namingState.activeCreative=ids.includes(d.activeCreative)?d.activeCreative:ids[0];
     namingState.editingId=ids[0];
   }
 }catch(e){} }
 
 function n_renderAll(){ n_renderPresetSelect(); n_renderOrder(); n_renderCatalog(); n_renderDelim(); n_renderPreview();
   $("n-name").value=editingPreset().name;
-  track_renderPresetSelect(); tag_renderPresetSelect(); track_renderNamingFields(); tag_renderNamingFields(); }
+  track_renderPresetSelect(); tag_renderPresetSelect(); cre_renderPresetSelect();
+  track_renderNamingFields(); tag_renderNamingFields(); cre_renderNamingFields(); }
 
 function n_renderPresetSelect(){
   $("n-preset").innerHTML=namingState.presets.map(p=>`<option value="${esc(p.id)}" ${p.id===namingState.editingId?'selected':''}>${esc(p.name)}</option>`).join("");
@@ -1616,7 +1706,8 @@ function resolveToken(tab,key,ctx){
   return constVal(tab,key);
 }
 function buildName(tab,ctx){
-  const preset = tab==="tracker" ? presetById(namingState.activeTracker) : presetById(namingState.activeTag);
+  const id = tab==="tracker" ? namingState.activeTracker : tab==="tag" ? namingState.activeTag : namingState.activeCreative;
+  const preset = presetById(id);
   const parts = preset.tokens.map(t=>resolveToken(tab,t.key,ctx).trim()).filter(Boolean);
   return parts.join(preset.delim);
 }
@@ -1630,7 +1721,8 @@ function track_setPreset(id){ namingState.activeTracker=id; track_renderNamingFi
 function tag_setPreset(id){ namingState.activeTag=id; tag_renderNamingFields(); n_persist(); }
 
 function namingFieldsFor(tab){
-  const preset = tab==="tracker" ? presetById(namingState.activeTracker) : presetById(namingState.activeTag);
+  const id = tab==="tracker" ? namingState.activeTracker : tab==="tag" ? namingState.activeTag : namingState.activeCreative;
+  const preset = presetById(id);
   return preset.tokens.filter(t=>NATIVE[tab].indexOf(t.key)<0); // constants this tab must collect
 }
 function renderNamingFields(tab, containerId){
@@ -1649,6 +1741,222 @@ function renderNamingFields(tab, containerId){
 }
 function track_renderNamingFields(){ renderNamingFields("tracker","track-namingfields"); }
 function tag_renderNamingFields(){ renderNamingFields("tag","tag-namingfields"); }
+
+/* ===================== CREATIVES TAB ===================== */
+var creState = { dirHandle:null, files:[], canWrite:false, seq:1 };
+const LANG_FOLDER = {arabic:"AR",arab:"AR","العربية":"AR",ar:"AR",english:"EN",eng:"EN",en:"EN",french:"FR",fr:"FR"};
+const GENERIC_FOLDER = new Set(["creatives","creative","assets","asset","display","banners","banner","final","finals","output","files","ready","upload","uploads","resized","static"]);
+
+function cre_initSupport(){ const el=$("cre-support"); if(!el) return;
+  el.innerHTML = window.showDirectoryPicker
+    ? "Chrome or Edge detected, files can be renamed in place. Use the tool from your hosted https URL, not a local file."
+    : "This browser can read the folder but cannot rename in place. Use Export rename map for your script, or open the tool in Chrome or Edge.";
+}
+function cre_renderPresetSelect(){ const s=$("cre-preset"); if(!s)return;
+  s.innerHTML=namingState.presets.map(p=>`<option value="${esc(p.id)}" ${p.id===namingState.activeCreative?'selected':''}>${esc(p.name)}</option>`).join(""); }
+function cre_setPreset(id){ namingState.activeCreative=id; cre_renderNamingFields(); cre_render(); n_persist(); }
+function cre_renderNamingFields(){
+  const el=$("cre-namingfields"); if(!el) return;
+  const fields=namingFieldsFor("creative");
+  if(!fields.length){el.innerHTML="";el.style.display="none";return;}
+  el.style.display="grid";
+  el.innerHTML=fields.map(t=>{const key=t.key,val=constVal("creative",key);
+    return `<div class="field" style="margin-bottom:0"><label class="lbl">${esc(tokenLabel(key))}</label>
+      <input type="text" value="${esc(val)}" placeholder="${esc(tokenLabel(key))}" oninput="namingState.consts['creative']['${esc(key)}']=this.value;cre_render()"></div>`;}).join("");
+}
+
+function cre_langFrom(str){
+  if(!str) return "";
+  const low=str.toLowerCase().trim();
+  if(LANG_FOLDER[low]) return LANG_FOLDER[low];
+  const toks=str.split(/[^A-Za-z\u0600-\u06FF]+/).filter(Boolean);
+  for(const t of toks){ const tl=t.toLowerCase();
+    if(LANG_FOLDER[tl]) return LANG_FOLDER[tl];
+    const m=state.languages.find(l=>l.toLowerCase()===tl); if(m) return m; }
+  return "";
+}
+function cre_guessLang(name,folders){
+  for(let i=folders.length-1;i>=0;i--){const l=cre_langFrom(folders[i]); if(l) return l;}
+  return cre_langFrom(name);
+}
+function cre_guessProduct(folders){
+  for(let i=folders.length-1;i>=0;i--){const f=folders[i],low=f.toLowerCase();
+    if(cre_langFrom(f)) continue; if(GENERIC_FOLDER.has(low)) continue; return f;}
+  return folders.length?folders[0]:"";
+}
+function cre_is2x(name){ return /(^|[^a-z0-9])@?2x([^a-z0-9]|$)/i.test(name); }
+
+function cre_imgFallback(file){ return new Promise(r=>{const url=URL.createObjectURL(file);const im=new Image();
+  im.onload=()=>{r([im.naturalWidth,im.naturalHeight]);URL.revokeObjectURL(url);};
+  im.onerror=()=>{r([0,0]);URL.revokeObjectURL(url);}; im.src=url;}); }
+function cre_detectDims(file){
+  return new Promise(res=>{
+    const type=file.type||"";
+    if(type.indexOf("image/")===0){
+      if(window.createImageBitmap){ createImageBitmap(file).then(b=>{res([b.width,b.height]); if(b.close)b.close();}).catch(()=>cre_imgFallback(file).then(res)); }
+      else cre_imgFallback(file).then(res);
+    } else if(type.indexOf("video/")===0){
+      const url=URL.createObjectURL(file); const v=document.createElement("video"); v.preload="metadata";
+      v.onloadedmetadata=()=>{res([v.videoWidth,v.videoHeight]);URL.revokeObjectURL(url);};
+      v.onerror=()=>{res([0,0]);URL.revokeObjectURL(url);}; v.src=url;
+    } else res([0,0]);
+  });
+}
+function cre_computeSizes(f){
+  const aw=f.actualW, ah=f.actualH;
+  f.actualDim = (aw&&ah)?`${aw}x${ah}`:"";
+  if(aw&&ah){ if(f.is2x){ f.nominalDim=`${Math.round(aw/2)}x${Math.round(ah/2)}`; } else { f.nominalDim=`${aw}x${ah}`; } }
+  else { const m=f.name.match(/(\d{2,5})\s*[x×]\s*(\d{2,5})/i); if(m){ f.nominalDim=`${m[1]}x${m[2]}`; } }
+}
+
+async function cre_pickFolder(){
+  if(window.showDirectoryPicker){
+    try{
+      const dir=await window.showDirectoryPicker({mode:"readwrite",id:"cm360creatives"});
+      creState.dirHandle=dir; creState.canWrite=true; creState.files=[];
+      await cre_walk(dir,[dir.name]);
+      cre_afterLoad();
+    }catch(e){ if(e&&e.name!=="AbortError"){toast("Could not open the folder.");console.error(e);} }
+  } else { $("cre-fallback-input").click(); }
+}
+async function cre_walk(dirHandle,pathParts){
+  for await (const entry of dirHandle.values()){
+    if(entry.kind==="directory"){ await cre_walk(entry, pathParts.concat(entry.name)); }
+    else if(entry.kind==="file"){ if(/^\./.test(entry.name)) continue;
+      const file=await entry.getFile(); cre_addFile(file, pathParts, entry, dirHandle); }
+  }
+}
+function cre_fallbackLoad(e){
+  creState.canWrite=false; creState.dirHandle=null; creState.files=[];
+  [...e.target.files].forEach(f=>{ const rel=(f.webkitRelativePath||f.name).split("/");
+    const fname=rel.pop(); if(/^\./.test(fname)) return; cre_addFile(f, rel, null, null, fname); });
+  cre_afterLoad(); e.target.value="";
+}
+function cre_addFile(file, folders, handle, parentDir, forceName){
+  const name=forceName||file.name;
+  const dot=name.lastIndexOf("."); const ext=dot>0?name.slice(dot+1):""; const base=dot>0?name.slice(0,dot):name;
+  creState.files.push({uid:creState.seq++, file, handle:handle||null, parentDir:parentDir||null,
+    folders:folders.slice(), name, base, ext,
+    actualW:0, actualH:0, actualDim:"", is2x:cre_is2x(name), nominalDim:"",
+    product:cre_guessProduct(folders), language:cre_guessLang(name,folders),
+    include:true, detecting:true, newName:""});
+}
+function cre_afterLoad(){
+  if(!creState.files.length){toast("No files found in that folder.");return;}
+  $("cre-empty").classList.add("hidden"); $("cre-work").classList.remove("hidden"); $("cre-fileinfo").classList.remove("hidden");
+  $("cre-fileinfo").innerHTML=`${creState.files.length} files · ${creState.canWrite?'rename enabled':'read-only (export the map)'}`;
+  cre_render();
+  Promise.all(creState.files.map(f=>cre_detectDims(f.file).then(([w,h])=>{f.actualW=w;f.actualH=h;f.detecting=false;cre_computeSizes(f);}).catch(()=>{f.detecting=false;}))).then(()=>cre_render());
+}
+
+function cre_safe(s){ return (s||"").replace(/[\/\\:*?"<>|]+/g,"-").replace(/\s+/g," ").replace(/[ .]+$/,"").trim(); }
+function cre_newName(f){
+  return cre_safe(buildName("creative",{dimension:f.nominalDim, product:f.product, language:f.language, campaign:($("cre-campaign").value||"").trim()}));
+}
+function cre_computeCollisions(){
+  const seen={};
+  creState.files.forEach(f=>{ f.collision=false; f.newName=cre_newName(f);
+    if(!f.include||!f.newName) return;
+    const finalName=f.newName+(f.ext?("."+f.ext):"");
+    const key=(f.folders.join("/")+"/"+finalName).toLowerCase();
+    (seen[key]=seen[key]||[]).push(f); });
+  Object.keys(seen).forEach(k=>{ if(seen[k].length>1) seen[k].forEach(f=>f.collision=true); });
+}
+function cre_refreshRows(){
+  cre_computeCollisions();
+  creState.files.forEach(f=>{ const tr=document.querySelector(`#cre-body tr[data-uid="${f.uid}"]`); if(!tr) return;
+    const cell=tr.querySelector(".newname"); if(cell) cell.innerHTML=esc(f.newName)||'<span style="color:var(--red)">—</span>';
+    const bad=f.include&&(!f.nominalDim||!f.product||!f.language||f.collision);
+    tr.classList.toggle("bad",bad); });
+  cre_updateSummary();
+}
+function cre_render(){
+  const body=$("cre-body"); if(!body) return;
+  if(!creState.files.length){body.innerHTML="";return;}
+  cre_computeCollisions();
+  const groups={}; const order=[];
+  creState.files.forEach(f=>{const k=f.folders.join(" / ")||"(root)"; if(!groups[k]){groups[k]=[];order.push(k);} groups[k].push(f);});
+  let html="";
+  order.forEach(k=>{
+    const g=groups[k];
+    html+=`<tr class="grp"><td colspan="8">${esc(k)}
+      <span style="font-weight:400">· product</span><input value="${esc(g[0].product||'')}" onchange="cre_setFolder('${esc(k)}','product',this.value)">
+      <span style="font-weight:400">· lang</span><input value="${esc(g[0].language||'')}" onchange="cre_setFolder('${esc(k)}','language',this.value)"></td></tr>`;
+    g.forEach(f=>{
+      const bad=f.include&&(!f.nominalDim||!f.product||!f.language||f.collision);
+      html+=`<tr data-uid="${f.uid}" class="${bad?'bad':''}">
+        <td><input type="checkbox" ${f.include?'checked':''} onchange="cre_edit(${f.uid},'include',this.checked)" style="width:auto"></td>
+        <td style="font-family:var(--mono);font-size:11px;word-break:break-all">${esc(f.name)} ${f.is2x?'<span class="pill2">2x</span>':''}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${esc(f.actualDim||(f.detecting?'…':'—'))}</td>
+        <td style="width:96px"><input class="mini" value="${esc(f.nominalDim)}" placeholder="160x600" oninput="cre_edit(${f.uid},'nominalDim',this.value)"></td>
+        <td><input value="${esc(f.product)}" oninput="cre_edit(${f.uid},'product',this.value)"></td>
+        <td style="width:64px"><input value="${esc(f.language)}" oninput="cre_edit(${f.uid},'language',this.value)"></td>
+        <td class="newname">${esc(f.newName)||'<span style="color:var(--red)">—</span>'}${f.collision?' <span class="pill2" style="background:var(--red-050);color:var(--red);border-color:#E5B3B1">dup</span>':''}</td>
+        <td><button onclick="cre_remove(${f.uid})" style="border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:16px">×</button></td>
+      </tr>`;
+    });
+  });
+  body.innerHTML=html;
+  $("cre-count").textContent=`${creState.files.length} file${creState.files.length!==1?'s':''}`;
+  cre_updateSummary();
+}
+function cre_updateSummary(){
+  let errs=0,valid=0,coll=0;
+  creState.files.forEach(f=>{ if(!f.include) return;
+    if(f.collision) coll++;
+    const ok=f.nominalDim&&f.product&&f.language;
+    if(ok&&!f.collision) valid++; else if(!ok) errs++; });
+  let badges="";
+  if(errs) badges+=`<span class="vbadge err"><span class="dot"></span>${errs} need product / language / size</span>`;
+  if(coll) badges+=`<span class="vbadge err"><span class="dot"></span>${coll} duplicate name${coll!==1?'s':''}</span>`;
+  if(!errs&&!coll) badges=`<span class="vbadge ok"><span class="dot"></span>${valid} ready</span>`;
+  $("cre-vsum").innerHTML=badges;
+  $("cre-rename").disabled=!creState.canWrite||valid===0||coll>0;
+}
+function cre_edit(uid,field,val){
+  const f=creState.files.find(x=>x.uid===uid); if(!f) return;
+  if(field==="include") f.include=val; else f[field]=val;
+  cre_refreshRows();
+}
+function cre_setFolder(k,field,val){
+  creState.files.forEach(f=>{ if((f.folders.join(" / ")||"(root)")===k) f[field]=val; });
+  cre_render();
+}
+function cre_remove(uid){ creState.files=creState.files.filter(f=>f.uid!==uid); cre_render(); if(!creState.files.length) cre_clear(); }
+function cre_clear(){ creState.files=[]; creState.dirHandle=null; creState.canWrite=false;
+  $("cre-empty").classList.remove("hidden"); $("cre-work").classList.add("hidden"); $("cre-fileinfo").classList.add("hidden"); }
+
+async function cre_rename(){
+  if(!creState.canWrite){toast("Renaming needs Chrome or Edge. Use Export rename map instead.");return;}
+  cre_computeCollisions();
+  if(creState.files.some(f=>f.include&&f.collision)){toast("Two or more files map to the same new name. Resolve the duplicates first.");cre_render();return;}
+  const targets=creState.files.filter(f=>f.include && cre_newName(f));
+  let done=0,fail=0,skip=0;
+  for(const f of targets){
+    const finalName=cre_newName(f)+(f.ext?("."+f.ext):"");
+    if(finalName===f.name){skip++;continue;}
+    try{
+      if(f.handle && f.handle.move){ await f.handle.move(finalName); }
+      else if(f.parentDir){ const nh=await f.parentDir.getFileHandle(finalName,{create:true});
+        const w=await nh.createWritable(); await w.write(await f.handle.getFile()); await w.close();
+        await f.parentDir.removeEntry(f.name); f.handle=nh; }
+      else { fail++; continue; }
+      f.name=finalName; done++;
+    }catch(e){ console.error(e); fail++; }
+  }
+  cre_render();
+  toast(`Renamed ${done}${skip?`, ${skip} unchanged`:''}${fail?`, ${fail} failed`:''}.`);
+}
+function cre_exportMap(){
+  const rows=creState.files.filter(f=>f.include);
+  if(!rows.length){toast("Nothing to export.");return;}
+  const aoa=[["Folder","Old name","New name","Product","Language","Nominal size","Actual size","2x"]];
+  rows.forEach(f=>{const nn=cre_newName(f); aoa.push([f.folders.join("/"), f.name, nn?(nn+(f.ext?("."+f.ext):"")):"", f.product, f.language, f.nominalDim, f.actualDim, f.is2x?"yes":""]);});
+  const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Rename map");
+  XLSX.writeFile(wb,"Creative rename map.xlsx");
+  toast(`Exported ${rows.length} rows.`);
+}
 
 init();
 </script>
